@@ -26,10 +26,6 @@ data Decl
     | Location P.SourcePos [Arg] [Decl]
     deriving (Data, Eq, Show, Typeable)
 
-instance Typeable P.SourcePos where
-
-instance Data P.SourcePos where
-
 instance Biplate NgFile Decl where
     biplate (NgFile fname ds) = (listStr ds, \newds -> NgFile fname (strList newds))
 
