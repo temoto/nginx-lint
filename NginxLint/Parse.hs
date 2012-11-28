@@ -1,6 +1,5 @@
 module NginxLint.Parse where
 
-import Debug.Trace
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Text.ParserCombinators.Parsec.Language (emptyDef)
 import qualified Text.ParserCombinators.Parsec.Token as T
@@ -18,16 +17,19 @@ parseFile = do whiteSpace
 decl :: Parser Decl
 decl = try ifDecl <|> nonIfDecl
 
+nonIfDecl :: Parser Decl
 nonIfDecl = try blockDecl <|> oneDecl
 
+oneDecl :: Parser Decl
 oneDecl = do whiteSpace
              pos <- getPosition
              name <- identifier
              args <- many argument
-             lexeme (char ';')
+             _ <- lexeme (char ';')
              return $ Decl pos name args
           <?> "directive"
 
+blockDecl :: Parser Decl
 blockDecl = do whiteSpace
                pos <- getPosition
                name <- identifier
@@ -35,29 +37,32 @@ blockDecl = do whiteSpace
                ds <- braces (many decl)
                return $ Block pos name args ds
 
+ifDecl :: Parser Decl
 ifDecl = do whiteSpace
             pos <- getPosition
             reserved "if"
-            symbol "("
+            _ <- symbol "("
             args <- argument `manyTill` try (symbol ")")
             ds <- braces (many nonIfDecl)
             return $ Block pos "if" args ds
 
 argument :: Parser Arg
-argument = quotedString <|> plainString
-        <|> parseInteger
+argument = parseInteger <|> quotedString <|> plainString
         <?> "directive argument"
 
+parseInteger :: Parser Arg
 parseInteger = do pos <- getPosition
                   n <- integer
                   return $ Integer pos n
 
+quotedString :: Parser Arg
 quotedString = do pos <- getPosition
-                  symbol "\""
+                  _ <- symbol "\""
                   s <- many (noneOf "\"")
-                  symbol "\""
+                  _ <- symbol "\""
                   return $ QuotedString pos s
 
+plainString :: Parser Arg
 plainString = do pos <- getPosition
                  s <- lexeme ps
                  return $ RawString pos s
@@ -75,19 +80,19 @@ nginxDef = emptyDef
     , T.reservedNames  = ["if"]
     }
 
-whiteSpace    = T.whiteSpace lexer
-lexeme        = T.lexeme lexer
-symbol        = T.symbol lexer
 braces        = T.braces lexer
-natural       = T.natural lexer
-float         = T.float lexer
-integer       = T.natural lexer
-parens        = T.parens lexer
-comma         = T.comma lexer
-semi          = T.semi lexer
-dot           = T.dot lexer
+--comma         = T.comma lexer
+--commaSep      = T.commaSep lexer
+--commaSep1     = T.commaSep1 lexer
+--dot           = T.dot lexer
+--float         = T.float lexer
 identifier    = T.identifier lexer
+integer       = T.natural lexer
+lexeme        = T.lexeme lexer
+--natural       = T.natural lexer
+--parens        = T.parens lexer
 reserved      = T.reserved lexer
-commaSep      = T.commaSep lexer
-commaSep1     = T.commaSep1 lexer
-semiSep       = T.semiSep lexer
+--semi          = T.semi lexer
+--semiSep       = T.semiSep lexer
+symbol        = T.symbol lexer
+whiteSpace    = T.whiteSpace lexer
