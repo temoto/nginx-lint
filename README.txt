@@ -12,12 +12,16 @@ Usage
 
 nginxlint is written in Haskell, and so it requires GHC (or other Haskell compiler/interpreter).
 
-Simplest way to get started is run `make test`. This will try to build `nginxlint` binary using `ghc`
-compiler and run it with example config: test.conf.
+Simplest way to get started is run `cabal install`. This will try to build `nginx-lint` binary using
+available Haskell compiler.
+
+Run `nginx-lint test.conf` to see examples of hint this linter may give.
+
+For development, you may wish to run `cabal install --enable-tests`.
 
 
 General usage:
-    ./nginxlint FILE...
+    ./nginx-lint FILE...
 
 
 TODO
