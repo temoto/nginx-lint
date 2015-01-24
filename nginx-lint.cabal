@@ -37,12 +37,11 @@ test-suite nginx-lint-test
   main-is:           Main.hs
   -- TODO: bisect compatible versions
   build-depends:     base (>= 4 && < 5),
-                     HUnit,
                      parsec,
                      QuickCheck,
                      test-framework,
-                     test-framework-hunit,
                      test-framework-quickcheck2,
+                     transformers,
                      uniplate
   other-modules:     NginxLint.Data, NginxLint.Parse
 

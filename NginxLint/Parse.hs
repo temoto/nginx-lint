@@ -33,22 +33,26 @@ blockDecl :: Parser Decl
 blockDecl = do whiteSpace
                pos <- getPosition
                name <- identifier
-               args <- try (many argument)
+               args <- many argument
                ds <- braces (many decl)
                return $ Block pos name args ds
+            <?> "block directive"
 
 ifDecl :: Parser Decl
 ifDecl = do whiteSpace
             pos <- getPosition
             reserved "if"
-            _ <- symbol "("
-            args <- argument `manyTill` try (symbol ")")
-            ds <- braces (many nonIfDecl)
+            args <- parens $ many1 ifArgument
+            ds <- braces $ many nonIfDecl
             return $ Block pos "if" args ds
+         <?> "if directive"
+    where
+        ifArgument = try parseInteger <|> try quotedString <|> plain
+            <?> "if argument"
+        plain = mkString " \"\v\t\r\n(){};" "if plain string"
 
 argument :: Parser Arg
-argument = parseInteger <|> quotedString <|> plainString
-        <?> "directive argument"
+argument = try parseInteger <|> try quotedString <|> plainString
 
 parseInteger :: Parser Arg
 parseInteger = do pos <- getPosition
@@ -57,17 +61,21 @@ parseInteger = do pos <- getPosition
 
 quotedString :: Parser Arg
 quotedString = do pos <- getPosition
-                  _ <- symbol "\""
-                  s <- many (noneOf "\"")
-                  _ <- symbol "\""
+                  _ <- symbol q
+                  s <- many (noneOf q)
+                  _ <- symbol q
                   return $ QuotedString pos s
+    where q = "\""
 
-plainString :: Parser Arg
-plainString = do pos <- getPosition
-                 s <- lexeme ps
-                 return $ RawString pos s
-              <?> "plain string"
-    where ps = many1 (noneOf " \"\v\t\r\n(){};")
+mkString :: String -> String -> Parser Arg
+mkString excl help = p <?> help
+    where
+        p = do
+            pos <- getPosition
+            s <- lexeme $ many1 (noneOf excl)
+            return $ RawString pos s
+
+plainString = mkString " \"\v\t\r\n{};" "plain string"
 
 
 lexer :: T.TokenParser ()
@@ -75,6 +83,7 @@ lexer = T.makeTokenParser nginxDef
 
 nginxDef = emptyDef
     { T.commentLine    = "#"
+    , T.identStart     = alphaNum <|> char '_'
     , T.nestedComments = False
     , T.opLetter       = oneOf "<=>"
     , T.reservedNames  = ["if"]
@@ -90,7 +99,7 @@ identifier    = T.identifier lexer
 integer       = T.natural lexer
 lexeme        = T.lexeme lexer
 --natural       = T.natural lexer
---parens        = T.parens lexer
+parens        = T.parens lexer
 reserved      = T.reserved lexer
 --semi          = T.semi lexer
 --semiSep       = T.semiSep lexer

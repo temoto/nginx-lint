@@ -1,0 +1,10 @@
+language: haskell
+ghc:
+  - 7.8
+  - 7.6
+  - 7.4
+
+notifications:
+  email: true
+# enable fast container runtime
+sudo: false
